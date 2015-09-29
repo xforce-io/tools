@@ -1,0 +1,3 @@
+#!/bin/bash
+
+find ./ -name "Makefile" | sed 's/Makefile//g' | while read dir; do cd ${dir}; make clean; cd -; done

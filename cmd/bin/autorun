@@ -1,0 +1,39 @@
+#!/bin/bash 
+
+if [[ `find ../src -name *.cpp -o -name *.hpp` ]]; then
+  for ut_case in `ls bin/test_*`
+  do
+      if [[ $# -ge 1 ]]; then
+        if [[ `expr $ut_case : $1` -ne 0 ]]; then
+          echo -e "\n\e[31;34;1mRun case["$ut_case"] ..\n"
+          ./$ut_case
+        fi
+      else  
+        echo -e "\n\e[31;34;1mRun case["$ut_case"] ..\n"
+        ./$ut_case
+      fi
+
+      if [[ 0 != $? ]]; then
+          echo -e "\n\e[31;34;1mError case["$ut_case"]!\e[0;30;0m\n"
+          exit 1
+      fi
+  done
+  echo -e "\n\e[31;34;1mAll cases ok!\e[0;30;0m\n"
+elif [[ `find ../src -name *.scala` ]]; then
+  for ut_case in `find ./ -name *.class | grep -v -e '\\$' | sed "s/^.\/classes\///g" | sed "s/.class$//g" | sed "s/\//./g"`
+  do 
+    if [[ $# -ge 1 ]]; then
+      echo $ut_case
+      if [[ `expr $ut_case : $1` -ne 0 ]]; then
+        echo -e "\n\e[31;34;1mRun case["$ut_case"] ..\n"
+        scala -classpath classes $ut_case
+      fi
+    else  
+      echo -e "\n\e[31;34;1mRun case["$ut_case"] ..\n"
+      scala -classpath classes $ut_case
+    fi
+
+  done
+else
+  echo "not a valid env"
+fi

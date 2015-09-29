@@ -1,0 +1,4 @@
+#!/bin/bash 
+
+find ./ -name "*.cpp" -o -name "*.h" -o -name "*.hpp" -o -name "*.cc" -o -name "*.py" -o -name "*.scala" | grep -v baks | grep -v unused | grep -v output | grep -v 3rd | grep -v cpp-btree | xargs -i wc -l {} | sort -n -k 1 | awk '{a+=$1} END {print a}'
+find ./ -name "*.cpp" -o -name "*.h" -o -name "*.hpp" -o -name "*.cc" -o -name "*.py" -o -name "*.scala" | grep -v baks | grep -v unused | grep -v output | grep -v tests | grep -v 3rd | grep -v cpp-btree | xargs -i wc -l {} | sort -n -k 1 | awk '{a+=$1} END {print a}'
