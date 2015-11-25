@@ -9,8 +9,10 @@ object Xpre {
     val end :Boolean = false
     val master = new Master(config, resource, end)
     val slaves = createSlaves(config, master, resource, end)
-    master.join()
+    master.start()
+    slaves.foreach(_.start)
     slaves.foreach(_.join)
+    master.join()
   }
 
   protected def createSlaves(

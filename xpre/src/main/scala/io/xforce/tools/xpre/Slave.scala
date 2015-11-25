@@ -1,7 +1,8 @@
 package io.xforce.tools.xpre
 
 import java.io.{IOException, InputStreamReader, BufferedReader, PrintWriter}
-import java.net.URL
+import java.net.{URL, HttpURLConnection}
+import scala.util.control.Breaks._
 
 class Slave(
              config :ServiceConfig,
@@ -43,22 +44,26 @@ object Slave {
     var result = ""
     try {
       val realUrl = new URL(url)
-      val conn = realUrl.openConnection()
+      val conn = realUrl.openConnection().asInstanceOf[HttpURLConnection]
       conn.setRequestProperty("accept", "*/*")
       conn.setRequestProperty("connection", "Keep-Alive")
       conn.setRequestProperty("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)")
       conn.setDoOutput(true)
       conn.setDoInput(true)
+      conn.setRequestMethod("POST")
+
       out = new PrintWriter(conn.getOutputStream())
       out.print(param)
       out.flush()
       in = new BufferedReader(
         new InputStreamReader(conn.getInputStream()))
       var line = ""
-      while (true) {
-        line = in.readLine()
-        if (line == null) break;
-        result += line
+      breakable {
+          while (true) {
+            line = in.readLine()
+            if (line == null) break
+            result += line
+          }
       }
     } catch {
       case ex :Exception => {
