@@ -55,8 +55,7 @@ object Slave {
       out = new PrintWriter(conn.getOutputStream())
       out.print(param)
       out.flush()
-      in = new BufferedReader(
-        new InputStreamReader(conn.getInputStream()))
+      in = new BufferedReader(new InputStreamReader(conn.getInputStream()))
       var line = ""
       breakable {
           while (true) {
@@ -67,11 +66,10 @@ object Slave {
       }
     } catch {
       case ex :Exception => {
-        System.out.println("发送 POST 请求出现异常！" + ex)
+        System.out.println("fail_send_post[%s] stack[".format(url) + ex + "]")
         ex.printStackTrace()
       }
     }
-    //使用finally块来关闭输出流、输入流
     finally{
       if(out!=null) out.close()
       if(in!=null) in.close()
