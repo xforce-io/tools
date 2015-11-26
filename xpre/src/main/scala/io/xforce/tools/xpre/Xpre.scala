@@ -15,8 +15,10 @@ object Xpre {
       println("fail_create_slaves")
       return
     }
-    master.join()
+    master.start()
+    slaves.foreach(_.start)
     slaves.foreach(_.join)
+    master.join()
   }
 
   protected def createSlaves(

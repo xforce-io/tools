@@ -1,7 +1,8 @@
 package io.xforce.tools.xpre.slave
 
 import java.io.{InputStreamReader, BufferedReader, PrintWriter}
-import java.net.{HttpURLConnection, URL}
+import java.net.{URL, HttpURLConnection}
+import scala.util.control.Breaks._
 
 import com.alibaba.fastjson.JSON
 import io.xforce.tools.xpre.{Resource, Master, ServiceConfig}
@@ -58,24 +59,26 @@ object SlaveSeSearch {
       conn.setRequestProperty("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)")
       conn.setDoOutput(true)
       conn.setDoInput(true)
+      conn.setRequestMethod("POST")
+
       out = new PrintWriter(conn.getOutputStream())
       out.print(param)
       out.flush()
-      in = new BufferedReader(
-        new InputStreamReader(conn.getInputStream()))
+      in = new BufferedReader(new InputStreamReader(conn.getInputStream()))
       var line = ""
-      while (true) {
-        line = in.readLine()
-        if (line == null) break
-        result += line
+      breakable {
+          while (true) {
+            line = in.readLine()
+            if (line == null) break
+            result += line
+          }
       }
     } catch {
       case ex :Exception => {
-        System.out.println("发送 POST 请求出现异常！" + ex)
+        System.out.println("fail_send_post[%s] stack[".format(url) + ex + "]")
         ex.printStackTrace()
       }
     }
-    //使用finally块来关闭输出流、输入流
     finally{
       if(out!=null) out.close()
       if(in!=null) in.close()
