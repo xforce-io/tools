@@ -5,7 +5,7 @@ import java.net.{URL, HttpURLConnection}
 import scala.util.control.Breaks._
 
 import com.alibaba.fastjson.JSON
-import io.xforce.tools.xpre.{Resource, Master, ServiceConfig}
+import io.xforce.tools.xpre.{Timer, Resource, Master, ServiceConfig}
 
 class SlaveSeSearch(
              config :ServiceConfig,
@@ -34,11 +34,14 @@ class SlaveSeSearch(
   }
 
   private def doTask(data :String): Unit = {
+    val timer = new Timer
     val result = SlaveSeSearch.sendPost(config.globalConfig.targetAddr, data)
+    timer.stop
+
     if (SlaveSeSearch.checkResult(result)) {
-      master.reportSuccs()
+      master.getStatistics.reportSuccs(timer.timeMs)
     } else {
-      master.reportFails()
+      master.getStatistics.reportFails(timer.timeMs)
     }
   }
 
