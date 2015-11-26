@@ -66,14 +66,15 @@ class Statistics(
   }
 
   def report = {
-    val curTimeSec = Time.getCurrentSec
-    if (curTimeSec != lastReportTimeMs/1000) {
+    val timeMsElapse = Time.getCurrentMs - lastReportTimeMs
+    if (timeMsElapse>1000) {
+      val reqAll = succs.get() + fails.get()
       println("numSpawned[%d] succ[%d] fail[%d] qps[%d] avgMs[%d]".format(
         config.globalConfig.numTasks,
         succs.get(),
         fails.get(),
-        ((succs.get() + fails.get()) * 1.0 / (Time.getCurrentMs - lastReportTimeMs) * 1000).toInt,
-        timeMsAll.get / (succs.get() + fails.get())
+        (reqAll * 1.0 / timeMsElapse * 1000).toInt,
+        if (reqAll!=0) timeMsAll.get / reqAll else 0
       ))
 
       succs.set(0)
