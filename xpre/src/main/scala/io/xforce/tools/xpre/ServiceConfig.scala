@@ -17,6 +17,7 @@ class ServiceConfig(val confPath :String) {
 }
 
 class GlobalConfig(val config :Config) {
+  val category = config.getString("category")
   val targetAddr = config.getString("targetAddr")
   val resourceFilepath = config.getString("resourceFilepath")
   val concurrency = config.getInt("concurrency")

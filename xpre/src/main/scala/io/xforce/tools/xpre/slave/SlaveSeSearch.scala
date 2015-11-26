@@ -1,13 +1,16 @@
-package io.xforce.tools.xpre
+package io.xforce.tools.xpre.slave
 
-import java.io.{IOException, InputStreamReader, BufferedReader, PrintWriter}
-import java.net.URL
+import java.io.{InputStreamReader, BufferedReader, PrintWriter}
+import java.net.{HttpURLConnection, URL}
 
-class Slave(
+import com.alibaba.fastjson.JSON
+import io.xforce.tools.xpre.{Resource, Master, ServiceConfig}
+
+class SlaveSeSearch(
              config :ServiceConfig,
              master :Master,
              resource :Resource,
-             end :Boolean) extends Thread {
+             end :Boolean) extends Slave {
   override def run(): Unit = {
     while (!end) {
       if (!process) {
@@ -30,20 +33,26 @@ class Slave(
   }
 
   private def doTask(data :String): Unit = {
-    Slave.sendPost(config.globalConfig.targetAddr, data)
+    val result = SlaveSeSearch.sendPost(config.globalConfig.targetAddr, data)
+    if (SlaveSeSearch.checkResult(result)) {
+      master.reportSuccs()
+    } else {
+      master.reportFails()
+    }
   }
 
   private val taskBatch = config.globalConfig.taskBatch
 }
 
-object Slave {
-  def sendPost(url :String, param :String) {
+object SlaveSeSearch {
+  def sendPost(url :String, param :String) :String = {
     var out :PrintWriter = null
     var in :BufferedReader = null
     var result = ""
     try {
       val realUrl = new URL(url)
-      val conn = realUrl.openConnection()
+      val conn = realUrl.openConnection().asInstanceOf[HttpURLConnection]
+      conn.setRequestMethod("POST")
       conn.setRequestProperty("accept", "*/*")
       conn.setRequestProperty("connection", "Keep-Alive")
       conn.setRequestProperty("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)")
@@ -57,7 +66,7 @@ object Slave {
       var line = ""
       while (true) {
         line = in.readLine()
-        if (line == null) break;
+        if (line == null) break
         result += line
       }
     } catch {
@@ -72,6 +81,11 @@ object Slave {
       if(in!=null) in.close()
     }
     result
+  }
+
+  def checkResult(postRes :String) :Boolean = {
+    val jsonObj = JSON.parseObject(postRes)
+    jsonObj.getJSONObject("code").getString("errmsg") == "success"
   }
 }
 

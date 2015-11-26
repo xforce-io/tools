@@ -1,5 +1,7 @@
 package io.xforce.tools.xpre
 
+import io.xforce.tools.xpre.slave.{SlaveSeSearch, Slave}
+
 import scala.collection.mutable.ArrayBuffer
 
 object Xpre {
@@ -9,6 +11,10 @@ object Xpre {
     val end :Boolean = false
     val master = new Master(config, resource, end)
     val slaves = createSlaves(config, master, resource, end)
+    if (slaves == null) {
+      println("fail_create_slaves")
+      return
+    }
     master.join()
     slaves.foreach(_.join)
   }
@@ -20,7 +26,15 @@ object Xpre {
       end :Boolean): Array[Slave] = {
     val slaves = new ArrayBuffer[Slave]()
     for (i <- 0 until config.globalConfig.concurrency) {
-      slaves.append(new Slave(config, master, resource, end))
+      config.globalConfig.category match {
+        case "se-search" => {
+          slaves.append(new SlaveSeSearch(config, master, resource, end))
+        }
+        case _ => {
+          println("unknow_category[%s]".format(config.globalConfig.category))
+          return null
+        }
+      }
     }
     slaves.toArray
   }

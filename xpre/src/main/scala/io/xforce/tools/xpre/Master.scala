@@ -1,5 +1,7 @@
 package io.xforce.tools.xpre
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import io.xforce.tools.xpre.public.ConcurrentPipe
 
 class Master(
@@ -10,13 +12,16 @@ class Master(
 
   override def run(): Unit = {
     while (!end) {
-      if (!process_) {
+      if (!process) {
         Thread.sleep(10)
       }
     }
   }
 
-  def process_ :Boolean = {
+  def reportSuccs(num :Int = 1) = succs.addAndGet(num)
+  def reportFails(num :Int = 1) = fails.addAndGet(num)
+
+  private def process :Boolean = {
     if (shouldGenNewTasks) {
       pipe_.push(curOffset)
     } else {
@@ -24,9 +29,19 @@ class Master(
     }
   }
 
+  private def report = {
+    val curTimeSec = Time.getCurrentSec
+    if (curTimeSec != Master.lastReportTimeSec) {
+      println("numSpawned[%d] succ[%d] fail[%d] qps[%d]".format(
+        numTasks, succs.get(), fails.get(), ((succs.get() + fails.get()) * 1.0 / timeElapseMs * 1000).toInt
+      ))
+      Master.lastReportTimeSec = curTimeSec
+    }
+  }
+
   private def shouldGenNewTasks :Boolean = {
     if (curTasksAssigned < numTasks) {
-      (Time.getCurrentMs - timeStartMs) * qps * 1.0 / 1000 > curTasksAssigned
+      timeElapseMs * qps * 1.0 / 1000 > curTasksAssigned
     } else {
       return false
     }
@@ -36,6 +51,8 @@ class Master(
     curOffset = (curOffset + taskBatch) % resource.len
   }
 
+  private def timeElapseMs = Time.getCurrentMs - timeStartMs
+
   private val pipe_ = new ConcurrentPipe[Int]()
   private val timeStartMs = Time.getCurrentMs
   private val numTasks = config.globalConfig.numTasks
@@ -44,7 +61,13 @@ class Master(
 
   private val curTasksAssigned = 0
   private var curOffset = 0
+
+  private val succs = new AtomicInteger(0)
+  private val fails = new AtomicInteger(0)
 }
 
+object Master {
+  protected var lastReportTimeSec = 0L
+}
 
 // vim: set ts=4 sw=4 et:
