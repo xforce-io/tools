@@ -22,8 +22,7 @@ class Master(
   private def process :Boolean = {
     statistics.report
     if (shouldGenNewTasks) {
-      pipe_.push(curOffset)
-      setNextOffset
+      assignTask
       true
     } else {
       false
@@ -38,14 +37,16 @@ class Master(
     }
   }
 
-  private def setNextOffset: Unit = {
+  private def assignTask : Unit = {
+    pipe_.push(curOffset)
     curOffset = (curOffset + taskBatch) % resource.len
+    curTasksAssigned += taskBatch
   }
 
   private val pipe_ = new ConcurrentPipe[Int]()
   private val taskBatch = config.globalConfig.taskBatch
 
-  private val curTasksAssigned = 0
+  private var curTasksAssigned = 0
   private var curOffset = 0
 
   private val statistics = new Statistics(config, this)
