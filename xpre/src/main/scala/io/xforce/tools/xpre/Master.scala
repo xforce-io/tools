@@ -23,6 +23,8 @@ class Master(
     statistics.report
     if (shouldGenNewTasks) {
       pipe_.push(curOffset)
+      setNextOffset
+      true
     } else {
       false
     }
@@ -54,10 +56,12 @@ class Statistics(
                val master :Master) {
   def reportSuccs(timeMs :Long) = {
     succs.addAndGet(1)
+    reqAll.addAndGet(1)
     timeMsAll.addAndGet(timeMs)
   }
   def reportFails(timeMs :Long) = {
     fails.addAndGet(1)
+    reqAll.addAndGet(1)
     timeMsAll.addAndGet(timeMs)
   }
 
@@ -68,13 +72,14 @@ class Statistics(
   def report = {
     val timeMsElapse = Time.getCurrentMs - lastReportTimeMs
     if (timeMsElapse>1000) {
-      val reqAll = succs.get() + fails.get()
-      println("numSpawned[%d] succ[%d] fail[%d] qps[%d] avgMs[%d]".format(
+      val reqs = succs.get() + fails.get()
+      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] qpsAll[%d]".format(
         config.globalConfig.numTasks,
         succs.get(),
         fails.get(),
-        (reqAll * 1.0 / timeMsElapse * 1000).toInt,
-        if (reqAll!=0) timeMsAll.get / reqAll else 0
+        if (reqs!=0) timeMsAll.get / reqs else 0,
+        (reqs * 1.0 / timeMsElapse * 1000).toInt,
+        (reqAll.get() * 1.0 / timeMsElapse * 1000).toInt
       ))
 
       succs.set(0)
@@ -86,6 +91,7 @@ class Statistics(
 
   private val succs = new AtomicLong(0)
   private val fails = new AtomicLong(0)
+  private val reqAll = new AtomicLong(0)
   private val timeMsAll = new AtomicLong(0)
   private var lastReportTimeMs = 0L
   private val timeStartMs = Time.getCurrentMs

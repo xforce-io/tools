@@ -49,6 +49,8 @@ class SlaveSeSearch(
 }
 
 object SlaveSeSearch {
+  private val kBlockSize = 4096
+
   def sendPost(url :String, param :String) :String = {
     var out :PrintWriter = null
     var in :BufferedReader = null
@@ -68,12 +70,12 @@ object SlaveSeSearch {
       out.print(param)
       out.flush()
       in = new BufferedReader(new InputStreamReader(conn.getInputStream()))
-      var line = ""
+      val buf = new Array[Char](kBlockSize)
       breakable {
           while (true) {
-            line = in.readLine()
-            if (line == null) break
-            result += line
+            val ret = in.read(buf, 0, buf.length)
+            if (ret == -1) break
+            result += buf
           }
       }
     } catch {
