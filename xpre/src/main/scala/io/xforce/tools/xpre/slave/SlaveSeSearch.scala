@@ -64,7 +64,6 @@ object SlaveSeSearch {
       conn.setRequestProperty("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)")
       conn.setDoOutput(true)
       conn.setDoInput(true)
-      conn.setRequestMethod("POST")
 
       out = new PrintWriter(conn.getOutputStream())
       out.print(param)
@@ -75,7 +74,7 @@ object SlaveSeSearch {
           while (true) {
             val ret = in.read(buf, 0, buf.length)
             if (ret == -1) break
-            result += buf
+            result += buf.take(ret).mkString
           }
       }
     } catch {
