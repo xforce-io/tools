@@ -79,7 +79,7 @@ class Statistics(
         fails.get(),
         if (reqs!=0) timeMsAll.get / reqs else 0,
         (reqs * 1.0 / timeMsElapse * 1000).toInt,
-        (reqAll.get() * 1.0 / timeMsElapse * 1000).toInt
+        (reqAll.get() * 1.0 / (Time.getCurrentMs - timeStartMs) * 1000).toInt
       ))
 
       succs.set(0)
