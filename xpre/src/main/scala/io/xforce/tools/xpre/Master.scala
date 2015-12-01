@@ -1,6 +1,6 @@
 package io.xforce.tools.xpre
 
-import java.util.concurrent.atomic.{AtomicLong, AtomicInteger}
+import java.util.concurrent.atomic.AtomicLong
 import io.xforce.tools.xpre.public.ConcurrentPipe
 
 class Master(
@@ -22,10 +22,12 @@ class Master(
   def getStatistics :Statistics = statistics
 
   private def process :Int = {
-    statistics.report
+    statistics.report(1000)
     val ret = shouldGenNewTasks
     if (ret==0) {
       assignTask
+    } else if (ret<0) {
+      statistics.report(0)
     }
     ret
   }
@@ -72,9 +74,9 @@ class Statistics(
     (Time.getCurrentMs - timeStartMs) * config.globalConfig.qps * 1.0 / 1000
   }
 
-  def report = {
+  def report(reportIntervalMs :Long) = {
     val timeMsElapse = Time.getCurrentMs - lastReportTimeMs
-    if (timeMsElapse>1000) {
+    if (timeMsElapse > reportIntervalMs) {
       val reqs = succs.get() + fails.get()
       println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] qpsAll[%d] all[%d]".format(
         config.globalConfig.numTasks,
