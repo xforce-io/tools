@@ -41,12 +41,15 @@ class Master(
     if (ret==0) {
       assignTask
     } else if (ret<0) {
-      while (pipe_.length > 1) {
-        Thread.sleep(10)
-        statistics.report(1000)
-      }
-      slaves.foreach(_.join)
-      statistics.report(0)
+      var allDead = true
+      do {
+        allDead = true
+        slaves.foreach { slave =>
+          if (slave.isAlive) allDead = false
+        }
+        statistics.report(0)
+        Thread.sleep(1000)
+      } while (!allDead)
     }
     ret
   }
