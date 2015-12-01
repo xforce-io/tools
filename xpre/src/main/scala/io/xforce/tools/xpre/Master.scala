@@ -5,35 +5,37 @@ import io.xforce.tools.xpre.public.ConcurrentPipe
 
 class Master(
               config :ServiceConfig,
-              resource :Resource,
-              end :Boolean) extends Thread {
+              resource :Resource) extends Thread {
   def getPipe() :ConcurrentPipe[Int] = pipe_
 
   override def run(): Unit = {
-    while (!end) {
-      if (!process) {
+    while (true) {
+      val ret = process
+      if (ret>0) {
         Thread.sleep(10)
+      } else if (ret<0) {
+        return
       }
     }
   }
 
   def getStatistics :Statistics = statistics
 
-  private def process :Boolean = {
+  private def process :Int = {
     statistics.report
-    if (shouldGenNewTasks) {
+    val ret = shouldGenNewTasks
+    if (ret==0) {
       assignTask
-      true
-    } else {
-      false
     }
+    ret
   }
 
-  private def shouldGenNewTasks :Boolean = {
+  private def shouldGenNewTasks :Int = {
     if (curTasksAssigned < config.globalConfig.numTasks) {
-       statistics.tasksShouldBeAssigned > curTasksAssigned
+       if (statistics.tasksShouldBeAssigned > curTasksAssigned) 0 else 1
     } else {
-      false
+      pipe_.push(-1)
+      -1
     }
   }
 

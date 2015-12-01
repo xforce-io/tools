@@ -8,9 +8,8 @@ object Xpre {
   def main(args :Array[String]) {
     val config = new ServiceConfig("conf/xpre.conf")
     val resource = new Resource(config)
-    val end :Boolean = false
-    val master = new Master(config, resource, end)
-    val slaves = createSlaves(config, master, resource, end)
+    val master = new Master(config, resource)
+    val slaves = createSlaves(config, master, resource)
     if (slaves == null) {
       println("fail_create_slaves")
       return
@@ -24,13 +23,12 @@ object Xpre {
   protected def createSlaves(
       config :ServiceConfig,
       master :Master,
-      resource :Resource,
-      end :Boolean): Array[Slave] = {
+      resource :Resource): Array[Slave] = {
     val slaves = new ArrayBuffer[Slave]()
     for (i <- 0 until config.globalConfig.concurrency) {
       config.globalConfig.category match {
         case "se-search" => {
-          slaves.append(new SlaveSeSearch(config, master, resource, end))
+          slaves.append(new SlaveSeSearch(config, master, resource))
         }
         case _ => {
           println("unknow_category[%s]".format(config.globalConfig.category))
