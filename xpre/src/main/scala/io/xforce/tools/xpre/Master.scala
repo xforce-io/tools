@@ -2,10 +2,24 @@ package io.xforce.tools.xpre
 
 import java.util.concurrent.atomic.AtomicLong
 import io.xforce.tools.xpre.public.ConcurrentPipe
+import io.xforce.tools.xpre.slave.{SlaveSeSearch, Slave}
+
+import scala.collection.mutable.ArrayBuffer
 
 class Master(
               config :ServiceConfig,
               resource :Resource) extends Thread {
+  private val pipe_ = new ConcurrentPipe[Int]()
+  private val taskBatch = config.globalConfig.taskBatch
+
+  private var curTasksAssigned = 0
+  private var curOffset = 0
+
+  private val statistics = new Statistics(config, this)
+
+  private val slaves = createSlaves(config, this, resource)
+  slaves.foreach(_.start)
+
   def getPipe() :ConcurrentPipe[Int] = pipe_
 
   override def run(): Unit = {
@@ -27,6 +41,7 @@ class Master(
     if (ret==0) {
       assignTask
     } else if (ret<0) {
+      slaves.foreach(_.join)
       statistics.report(0)
     }
     ret
@@ -47,13 +62,24 @@ class Master(
     curTasksAssigned += taskBatch
   }
 
-  private val pipe_ = new ConcurrentPipe[Int]()
-  private val taskBatch = config.globalConfig.taskBatch
-
-  private var curTasksAssigned = 0
-  private var curOffset = 0
-
-  private val statistics = new Statistics(config, this)
+  private def createSlaves(
+      config :ServiceConfig,
+      master :Master,
+      resource :Resource): Array[Slave] = {
+    val slaves = new ArrayBuffer[Slave]()
+    for (i <- 0 until config.globalConfig.concurrency) {
+      config.globalConfig.category match {
+        case "se-search" => {
+          slaves.append(new SlaveSeSearch(config, master, resource))
+        }
+        case _ => {
+          println("unknow_category[%s]".format(config.globalConfig.category))
+          return null
+        }
+      }
+    }
+    slaves.toArray
+  }
 }
 
 class Statistics(

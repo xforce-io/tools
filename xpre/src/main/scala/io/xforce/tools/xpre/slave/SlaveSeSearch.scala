@@ -8,9 +8,9 @@ import com.alibaba.fastjson.JSON
 import io.xforce.tools.xpre.{Timer, Resource, Master, ServiceConfig}
 
 class SlaveSeSearch(
-             config :ServiceConfig,
-             master :Master,
-             resource :Resource) extends Slave {
+    config :ServiceConfig,
+    master :Master,
+    resource :Resource) extends Slave {
   override def run(): Unit = {
     while (true) {
       val ret = process
