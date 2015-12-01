@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 class Master(
               config :ServiceConfig,
               resource :Resource) extends Thread {
-  private val pipe_ = new ConcurrentPipe[Int]()
+  private val pipe_ = new ConcurrentPipe[Int](config.globalConfig.concurrency)
   private val taskBatch = config.globalConfig.taskBatch
 
   private var curTasksAssigned = 0
@@ -57,7 +57,9 @@ class Master(
   }
 
   private def assignTask : Unit = {
-    pipe_.push(curOffset)
+    while (!pipe_.push(curOffset))
+      Thread.sleep(10)
+
     curOffset = (curOffset + taskBatch) % resource.len
     curTasksAssigned += taskBatch
   }
