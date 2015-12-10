@@ -2,7 +2,7 @@ import com.alibaba.fastjson.JSON
 
 class Checker {
     def checkResponse(response) {
-        jsonObj = JSON.parseObject(response.asInstanceOf[String])
+        def jsonObj = JSON.parseObject(response)
         jsonObj.getJSONObject("code").getString("errmsg") == "success"
     }
 }
