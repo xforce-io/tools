@@ -16,7 +16,9 @@ class Resource(val config :ServiceConfig) {
     val file = new java.io.File(config.globalConfig.resourceFilepath)
     if (file.exists()) {
       Source.fromFile(file).getLines().foreach(data.append(_))
-    } else {
+    }
+
+    if (data.length == 0) {
       data.append("")
     }
     data.toArray
