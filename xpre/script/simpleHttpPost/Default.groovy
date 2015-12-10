@@ -1,5 +1,5 @@
 class Checker {
-    def checkResponse(response) {
+    def checkResult(result) {
         return true
     }
 }

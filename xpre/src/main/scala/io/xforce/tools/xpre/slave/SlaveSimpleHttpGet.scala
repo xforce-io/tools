@@ -1,8 +1,5 @@
 package io.xforce.tools.xpre.slave
 
-import java.io.File
-
-import groovy.lang.{GroovyClassLoader, GroovyObject}
 import io.xforce.tools.xpre.public.HttpHelper
 import io.xforce.tools.xpre.{Resource, Master, ServiceConfig}
 
@@ -13,19 +10,19 @@ class SlaveSimpleHttpGet(
     config :ServiceConfig,
     master :Master,
     resource :Resource) extends Slave(config, master, resource) {
-  val checkerObj = getCheckerObject
 
   override def sendReq(data :AnyRef) :AnyRef = {
-    HttpHelper.sendGet(config.globalConfig.targetAddr, data.asInstanceOf[String])
+    val result = HttpHelper.sendGet(config.globalConfig.targetAddr, data.asInstanceOf[String])
+    if (result._1 == 200) {
+      result._2
+    } else {
+      null
+    }
   }
 
   override def checkResult(response :AnyRef) :Boolean = {
-    checkerObj.invokeMethod("checkResult", null).asInstanceOf[Boolean]
+    checkerObj.invokeMethod("checkResponse", response.asInstanceOf[String]).asInstanceOf[Boolean]
   }
 
-  def getCheckerObject :GroovyObject = {
-    val loader = new GroovyClassLoader(getClass.getClassLoader)
-    val checkerClass = loader.parseClass(new File(config.globalConfig.checkerFilepath))
-    checkerClass.newInstance.asInstanceOf[GroovyObject]
-  }
+
 }

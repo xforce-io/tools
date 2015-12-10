@@ -2,20 +2,24 @@ package io.xforce.tools.xpre.slave
 
 import io.xforce.tools.xpre.public.HttpHelper
 
-import com.alibaba.fastjson.JSON
 import io.xforce.tools.xpre.{Resource, Master, ServiceConfig}
 
-class SlaveSeSearch(
+class SlaveSimpleHttpPost(
     config :ServiceConfig,
     master :Master,
     resource :Resource) extends Slave(config, master, resource) {
+
   override def sendReq(data :AnyRef) :AnyRef = {
-    HttpHelper.sendPost(config.globalConfig.targetAddr, data.asInstanceOf[String])
+    val result = HttpHelper.sendPost(config.globalConfig.targetAddr, data.asInstanceOf[String])
+    if (result._1 == 200) {
+      result._2
+    } else {
+      null
+    }
   }
 
   override def checkResult(response :AnyRef) :Boolean = {
-    val jsonObj = JSON.parseObject(response.asInstanceOf[String])
-    jsonObj.getJSONObject("code").getString("errmsg") == "success"
+    checkerObj.invokeMethod("checkResponse", response.asInstanceOf[String]).asInstanceOf[Boolean]
   }
 }
 

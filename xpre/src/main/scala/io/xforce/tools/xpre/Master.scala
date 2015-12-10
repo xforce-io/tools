@@ -2,7 +2,7 @@ package io.xforce.tools.xpre
 
 import java.util.concurrent.atomic.AtomicLong
 import io.xforce.tools.xpre.public.ConcurrentPipe
-import io.xforce.tools.xpre.slave.{SlaveSimpleHttpGet, SlaveSeSearch, Slave}
+import io.xforce.tools.xpre.slave.{SlaveSimpleHttpPost, SlaveSimpleHttpGet, Slave}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -78,8 +78,8 @@ class Master(
     val slaves = new ArrayBuffer[Slave]()
     for (i <- 0 until config.globalConfig.concurrency) {
       config.globalConfig.category match {
-        case "se-search" => {
-          slaves.append(new SlaveSeSearch(config, master, resource))
+        case "simple-http-post" => {
+          slaves.append(new SlaveSimpleHttpPost(config, master, resource))
         }
         case "simple-http-get" => {
           slaves.append(new SlaveSimpleHttpGet(config, master, resource))

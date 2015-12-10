@@ -1,5 +1,8 @@
 package io.xforce.tools.xpre.slave
 
+import java.io.File
+
+import groovy.lang.{GroovyClassLoader, GroovyObject}
 import io.xforce.tools.xpre.{Resource, Master, ServiceConfig, Timer}
 
 abstract class Slave(
@@ -7,6 +10,7 @@ abstract class Slave(
     master :Master,
     resource :Resource) extends Thread {
 
+  protected val checkerObj = getCheckerObject
   private val taskBatch = config.globalConfig.taskBatch
 
   override def run(): Unit = {
@@ -51,6 +55,12 @@ abstract class Slave(
   protected def sendReq(data :AnyRef): AnyRef
 
   protected def checkResult(response :AnyRef) :Boolean
+
+  protected def getCheckerObject :GroovyObject = {
+    val loader = new GroovyClassLoader(getClass.getClassLoader)
+    val checkerClass = loader.parseClass(new File(config.globalConfig.checkerFilepath))
+    checkerClass.newInstance.asInstanceOf[GroovyObject]
+  }
 }
 
 // vim: set ts=4 sw=4 et:

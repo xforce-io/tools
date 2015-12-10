@@ -11,13 +11,14 @@ import scala.util.control.Breaks._
 object HttpHelper {
   private val kReadBlockSize = 4096
 
-  def sendGet(url :String, param :String) :String = {
+  def sendGet(url :String, param :String) :(Int, String) = {
     var in :BufferedReader = null
     var result = ""
+    var conn :HttpURLConnection = null
     try {
       val urlNameString = url + "?" + param
       val realUrl = new URL(urlNameString)
-      val conn = realUrl.openConnection().asInstanceOf[HttpURLConnection]
+      conn = realUrl.openConnection().asInstanceOf[HttpURLConnection]
       conn.setRequestMethod("GET")
       conn.setRequestProperty("accept", "*/*")
       conn.setRequestProperty("connection", "Keep-Alive")
@@ -43,16 +44,17 @@ object HttpHelper {
     } finally {
       if(in!=null) in.close()
     }
-    result
+    (conn.getResponseCode, result)
   }
 
-  def sendPost(url :String, param :String) :String = {
+  def sendPost(url :String, param :String) :(Int, String) = {
     var out :PrintWriter = null
     var in :BufferedReader = null
     var result = ""
+    var conn :HttpURLConnection = null
     try {
       val realUrl = new URL(url)
-      val conn = realUrl.openConnection().asInstanceOf[HttpURLConnection]
+      conn = realUrl.openConnection().asInstanceOf[HttpURLConnection]
       conn.setRequestMethod("POST")
       conn.setRequestProperty("accept", "*/*")
       conn.setRequestProperty("connection", "Keep-Alive")
@@ -82,6 +84,6 @@ object HttpHelper {
       if(out!=null) out.close()
       if(in!=null) in.close()
     }
-    result
+    (conn.getResponseCode, result)
   }
 }
