@@ -1,0 +1,27 @@
+apply plugin: 'scala'
+
+sourceCompatibility = 1.5
+version = '1.0'
+
+jar {
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+  manifest {
+    attributes 'Main-Class' : 'io.xforce.tools.xpre.Xpre'
+  }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.scala-lang:scala-library:2.10.4"
+    compile "org.scala-lang:scala-compiler:2.10.4"
+    compile "org.scala-lang:scala-reflect:2.10.4"
+    compile "com.typesafe:config:1.2.1"
+    compile "com.alibaba:fastjson:1.2.3"
+    compile "org.codehaus.groovy:groovy-all:2.4.5"
+    compile fileTree(dir: 'lib', include: '*.jar')
+
+    testCompile "junit:junit:4.11"
+}
