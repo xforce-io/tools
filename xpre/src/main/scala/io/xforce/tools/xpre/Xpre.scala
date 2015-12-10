@@ -1,9 +1,5 @@
 package io.xforce.tools.xpre
 
-import io.xforce.tools.xpre.slave.{SlaveSeSearch, Slave}
-
-import scala.collection.mutable.ArrayBuffer
-
 object Xpre {
   def main(args :Array[String]) {
     val config = new ServiceConfig("conf/xpre.conf")
