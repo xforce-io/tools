@@ -2,7 +2,6 @@ package io.xforce.tools.xpre.slave
 
 import java.io.File
 
-import com.alibaba.fastjson.JSON
 import groovy.lang.{GroovyClassLoader, GroovyObject}
 import io.xforce.tools.xpre.public.HttpHelper
 import io.xforce.tools.xpre.{Resource, Master, ServiceConfig}
@@ -26,7 +25,7 @@ class SlaveSimpleHttpGet(
 
   def getCheckerObject :GroovyObject = {
     val loader = new GroovyClassLoader(getClass.getClassLoader)
-    val checkerClass = loader.parseClass(new File("script/simpleHttpGet/Checker.groovy"))
+    val checkerClass = loader.parseClass(new File(config.globalConfig.checkerFilepath))
     checkerClass.newInstance.asInstanceOf[GroovyObject]
   }
 }

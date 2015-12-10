@@ -86,7 +86,7 @@ class Master(
         }
         case _ => {
           println("unknown_category[%s]".format(config.globalConfig.category))
-          return null
+          sys.exit(1)
         }
       }
     }
