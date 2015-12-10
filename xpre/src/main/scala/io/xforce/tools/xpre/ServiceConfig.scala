@@ -24,5 +24,6 @@ class GlobalConfig(val config :Config) {
   val numTasks = config.getInt("numTasks")
   val qps = config.getInt("qps")
   val taskBatch = config.getInt("taskBatch")
+  val checkerFilepath = config.getString("checkerFilepath")
 }
 

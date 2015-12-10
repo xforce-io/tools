@@ -2,7 +2,7 @@ package io.xforce.tools.xpre
 
 import java.util.concurrent.atomic.AtomicLong
 import io.xforce.tools.xpre.public.ConcurrentPipe
-import io.xforce.tools.xpre.slave.{SlaveSeSearch, Slave}
+import io.xforce.tools.xpre.slave.{SlaveSimpleHttpGet, SlaveSeSearch, Slave}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -81,8 +81,11 @@ class Master(
         case "se-search" => {
           slaves.append(new SlaveSeSearch(config, master, resource))
         }
+        case "simple-http-get" => {
+          slaves.append(new SlaveSimpleHttpGet(config, master, resource))
+        }
         case _ => {
-          println("unknow_category[%s]".format(config.globalConfig.category))
+          println("unknown_category[%s]".format(config.globalConfig.category))
           return null
         }
       }
