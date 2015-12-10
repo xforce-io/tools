@@ -13,7 +13,12 @@ class Resource(val config :ServiceConfig) {
 
   private def createDataStr(): Array[String] = {
     val data = new ArrayBuffer[String]
-    Source.fromFile(new java.io.File(config.globalConfig.resourceFilepath)).getLines().foreach(data.append(_))
+    val file = new java.io.File(config.globalConfig.resourceFilepath)
+    if (file.exists()) {
+      Source.fromFile(file).getLines().foreach(data.append(_))
+    } else {
+      data.append("")
+    }
     data.toArray
   }
 }

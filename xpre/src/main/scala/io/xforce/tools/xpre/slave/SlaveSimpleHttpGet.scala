@@ -12,7 +12,7 @@ class SlaveSimpleHttpGet(
     resource :Resource) extends Slave(config, master, resource) {
 
   override def sendReq(data :AnyRef) :AnyRef = {
-    val result = HttpHelper.sendGet(config.globalConfig.targetAddr, data.asInstanceOf[String])
+    val result = HttpHelper.sendGet("%s/%s".format(config.globalConfig.targetAddr, data.asInstanceOf[String]), "")
     if (result._1 == 200) {
       result._2
     } else {
