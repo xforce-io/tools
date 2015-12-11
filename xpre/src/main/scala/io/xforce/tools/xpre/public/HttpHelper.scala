@@ -9,16 +9,14 @@ import scala.util.control.Breaks._
  * Created by freeman on 15/12/4.
  */
 object HttpHelper {
-  private val kReadBlockSize = 4096
+  private val kReadBlockSize = 2<<20
 
   def sendGet(url :String, param :String) :(Int, String) = {
     var in :BufferedReader = null
     var result = ""
     var conn :HttpURLConnection = null
     try {
-      val urlNameString = url + "?" + param
-      val realUrl = new URL(urlNameString)
-      conn = realUrl.openConnection().asInstanceOf[HttpURLConnection]
+      conn = new URL(url + "?" + param).openConnection().asInstanceOf[HttpURLConnection]
       conn.setRequestMethod("GET")
       conn.setRequestProperty("accept", "*/*")
       conn.setRequestProperty("connection", "Keep-Alive")
@@ -53,8 +51,7 @@ object HttpHelper {
     var result = ""
     var conn :HttpURLConnection = null
     try {
-      val realUrl = new URL(url)
-      conn = realUrl.openConnection().asInstanceOf[HttpURLConnection]
+      conn = new URL(url).openConnection().asInstanceOf[HttpURLConnection]
       conn.setRequestMethod("POST")
       conn.setRequestProperty("accept", "*/*")
       conn.setRequestProperty("connection", "Keep-Alive")

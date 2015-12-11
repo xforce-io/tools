@@ -18,9 +18,6 @@ class SlaveSimpleHttpPost(
     }
   }
 
-  override def checkResult(response :AnyRef) :Boolean = {
-    checkerObj.invokeMethod("checkResponse", response.asInstanceOf[String]).asInstanceOf[Boolean]
-  }
 }
 
 

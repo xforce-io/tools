@@ -54,7 +54,9 @@ abstract class Slave(
 
   protected def sendReq(data :AnyRef): AnyRef
 
-  protected def checkResult(response :AnyRef) :Boolean
+  protected def checkResult(response :AnyRef) :Boolean = {
+    checkerObj.invokeMethod("checkResponse", response.asInstanceOf[String]).asInstanceOf[Boolean]
+  }
 
   protected def getCheckerObject :GroovyObject = {
     val loader = new GroovyClassLoader(getClass.getClassLoader)
