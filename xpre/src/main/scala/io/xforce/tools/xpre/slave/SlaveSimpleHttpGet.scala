@@ -11,8 +11,8 @@ class SlaveSimpleHttpGet(
     master :Master,
     resource :Resource) extends Slave(config, master, resource) {
 
-  override def sendReq(data :AnyRef) :AnyRef = {
-    val result = HttpHelper.sendGet("%s/%s".format(config.globalConfig.targetAddr, data.asInstanceOf[String]), "")
+  override def sendReq(data :String) :String = {
+    val result = HttpHelper.sendGet("%s/%s".format(config.globalConfig.targetAddr, data), "")
     if (result._1 == 200) {
       result._2
     } else {
@@ -20,8 +20,8 @@ class SlaveSimpleHttpGet(
     }
   }
 
-  override def checkResult(response :AnyRef) :Boolean = {
-    checkerObj.invokeMethod("checkResponse", response.asInstanceOf[String]).asInstanceOf[Boolean]
+  override def checkResult(response :String) :Boolean = {
+    checkerObj.invokeMethod("checkResponse", response).asInstanceOf[Boolean]
   }
 
 

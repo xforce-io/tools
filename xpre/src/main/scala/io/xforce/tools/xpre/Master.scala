@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 class Master(
               config :ServiceConfig,
               resource :Resource) extends Thread {
-  private val pipe_ = new ConcurrentPipe[Int](config.globalConfig.concurrency)
+  private val pipe_ = new ConcurrentPipe[(Int,Int)](100000, config.globalConfig.concurrency)
   private val taskBatch = config.globalConfig.taskBatch
 
   private var curTasksAssigned = 0
@@ -20,7 +20,7 @@ class Master(
   private val slaves = createSlaves(config, this, resource)
   slaves.foreach(_.start)
 
-  def getPipe() :ConcurrentPipe[Int] = pipe_
+  def getPipe() :ConcurrentPipe[(Int,Int)] = pipe_
 
   override def run(): Unit = {
     while (true) {
@@ -58,17 +58,18 @@ class Master(
     if (curTasksAssigned < config.globalConfig.numTasks) {
        if (statistics.tasksShouldBeAssigned > curTasksAssigned) 0 else 1
     } else {
-      pipe_.push(-1)
+      pipe_.push((-1, -1))
       -1
     }
   }
 
   private def assignTask : Unit = {
-    while (!pipe_.push(curOffset))
+    val numTasksToAssign = Math.min(taskBatch, config.globalConfig.numTasks - curTasksAssigned)
+    while (!pipe_.push((curOffset, numTasksToAssign)))
       Thread.sleep(10)
 
-    curOffset = (curOffset + taskBatch) % resource.len
-    curTasksAssigned += taskBatch
+    curOffset = (curOffset + numTasksToAssign) % resource.len
+    curTasksAssigned += numTasksToAssign
   }
 
   private def createSlaves(
@@ -104,6 +105,7 @@ class Statistics(
   }
   def reportFails(timeMs :Long) = {
     fails.addAndGet(1)
+    failsAll.addAndGet(1)
     reqAll.addAndGet(1)
     timeMsAll.addAndGet(timeMs)
   }
@@ -116,13 +118,14 @@ class Statistics(
     val timeMsElapse = Time.getCurrentMs - lastReportTimeMs
     if (timeMsElapse > reportIntervalMs) {
       val reqs = succs.get() + fails.get()
-      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] qpsAll[%d] all[%d]".format(
+      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] qpsAll[%d] failsAll[%d] all[%d]".format(
         config.globalConfig.numTasks,
         succs.get(),
         fails.get(),
         if (reqs!=0) timeMsAll.get / reqs else 0,
         (reqs * 1.0 / timeMsElapse * 1000).toInt,
         (reqAll.get() * 1.0 / (Time.getCurrentMs - timeStartMs) * 1000).toInt,
+        failsAll.get(),
         reqAll.get()
       ))
 
@@ -135,6 +138,7 @@ class Statistics(
 
   private val succs = new AtomicLong(0)
   private val fails = new AtomicLong(0)
+  private val failsAll = new AtomicLong(0)
   private val reqAll = new AtomicLong(0)
   private val timeMsAll = new AtomicLong(0)
   private var lastReportTimeMs = 0L

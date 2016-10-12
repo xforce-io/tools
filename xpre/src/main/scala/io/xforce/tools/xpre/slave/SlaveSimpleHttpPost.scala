@@ -9,8 +9,12 @@ class SlaveSimpleHttpPost(
     master :Master,
     resource :Resource) extends Slave(config, master, resource) {
 
-  override def sendReq(data :AnyRef) :AnyRef = {
-    val result = HttpHelper.sendPost(config.globalConfig.targetAddr, data.asInstanceOf[String])
+  override def preprocess(data :String): String = {
+    preprocessorObj.invokeMethod("process", data).asInstanceOf[String]
+  }
+
+  override def sendReq(data :String) :String = {
+    val result = HttpHelper.sendPost(config.globalConfig.targetAddr, data)
     if (result._1 == 200) {
       result._2
     } else {
@@ -18,8 +22,8 @@ class SlaveSimpleHttpPost(
     }
   }
 
-  override def checkResult(response :AnyRef) :Boolean = {
-    checkerObj.invokeMethod("checkResponse", response.asInstanceOf[String]).asInstanceOf[Boolean]
+  override def checkResult(response :String) :Boolean = {
+    checkerObj.invokeMethod("checkResponse", response).asInstanceOf[Boolean]
   }
 }
 

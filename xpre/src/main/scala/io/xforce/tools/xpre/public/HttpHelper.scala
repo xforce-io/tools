@@ -84,6 +84,11 @@ object HttpHelper {
       if(out!=null) out.close()
       if(in!=null) in.close()
     }
-    (conn.getResponseCode, result)
+
+    if (conn != null) {
+      (conn.getResponseCode, result)
+    } else {
+      (-100, result)
+    }
   }
 }
