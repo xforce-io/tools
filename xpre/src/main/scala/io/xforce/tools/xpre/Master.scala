@@ -101,12 +101,14 @@ class Statistics(
   def reportSuccs(timeMs :Long) = {
     succs.addAndGet(1)
     reqAll.addAndGet(1)
+    timeMsTotal.addAndGet(timeMs)
     timeMsAll.addAndGet(timeMs)
   }
   def reportFails(timeMs :Long) = {
     fails.addAndGet(1)
     failsAll.addAndGet(1)
     reqAll.addAndGet(1)
+    timeMsTotal.addAndGet(timeMs)
     timeMsAll.addAndGet(timeMs)
   }
 
@@ -118,12 +120,13 @@ class Statistics(
     val timeMsElapse = Time.getCurrentMs - lastReportTimeMs
     if (timeMsElapse > reportIntervalMs) {
       val reqs = succs.get() + fails.get()
-      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] qpsAll[%d] failsAll[%d] all[%d]".format(
+      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] avgAll[%d] qpsAll[%d] failsAll[%d] all[%d]".format(
         config.globalConfig.numTasks,
         succs.get(),
         fails.get(),
-        if (reqs!=0) timeMsAll.get / reqs else 0,
+        if (reqs!=0) timeMsTotal.get / reqs else 0,
         (reqs * 1.0 / timeMsElapse * 1000).toInt,
+        (timeMsAll.get() * 1.0 / reqAll.get()).toInt,
         (reqAll.get() * 1.0 / (Time.getCurrentMs - timeStartMs) * 1000).toInt,
         failsAll.get(),
         reqAll.get()
@@ -131,7 +134,7 @@ class Statistics(
 
       succs.set(0)
       fails.set(0)
-      timeMsAll.set(0)
+      timeMsTotal.set(0)
       lastReportTimeMs = Time.getCurrentMs
     }
   }
@@ -140,6 +143,7 @@ class Statistics(
   private val fails = new AtomicLong(0)
   private val failsAll = new AtomicLong(0)
   private val reqAll = new AtomicLong(0)
+  private val timeMsTotal = new AtomicLong(0)
   private val timeMsAll = new AtomicLong(0)
   private var lastReportTimeMs = 0L
   private val timeStartMs = Time.getCurrentMs

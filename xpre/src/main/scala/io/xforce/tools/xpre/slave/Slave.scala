@@ -52,9 +52,7 @@ abstract class Slave(
 
     var result :String = null
     try {
-      println("send req")
       result = sendReq(processedData)
-      println("recv rsp")
       timer.stop
     } catch {
       case e :Exception => {
@@ -69,6 +67,8 @@ abstract class Slave(
       } else {
         master.getStatistics.reportFails(timer.timeMs)
       }
+    } else {
+      master.getStatistics.reportSuccs(timer.timeMs)
     }
   }
 
