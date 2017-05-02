@@ -21,6 +21,7 @@ dependencies {
     compile "com.typesafe:config:1.2.1"
     compile "com.alibaba:fastjson:1.2.3"
     compile "org.codehaus.groovy:groovy-all:2.4.5"
+    compile 'com.google.guava:guava:21.0'
     compile fileTree(dir: 'lib', include: '*.jar')
 
     testCompile "junit:junit:4.11"

@@ -1,15 +1,20 @@
 package io.xforce.tools.xpre
 
-import java.util.concurrent.atomic.AtomicLong
+import java.util.Comparator
+import java.util.concurrent.locks.ReentrantLock
+
+import com.google.common.collect.TreeMultiset
 import io.xforce.tools.xpre.public.ConcurrentPipe
-import io.xforce.tools.xpre.slave.{SlaveSimpleHttpPost, SlaveSimpleHttpGet, Slave}
+import io.xforce.tools.xpre.slave.{Slave, SlaveSimpleHttpGet, SlaveSimpleHttpPost}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 class Master(
               config :ServiceConfig,
               resource :Resource) extends Thread {
-  private val pipe_ = new ConcurrentPipe[(Int,Int)](100000, config.globalConfig.concurrency)
+
+  private val pipe = new ConcurrentPipe[(Int,Int)](100000, config.globalConfig.concurrency)
   private val taskBatch = config.globalConfig.taskBatch
 
   private var curTasksAssigned = 0
@@ -20,7 +25,7 @@ class Master(
   private val slaves = createSlaves(config, this, resource)
   slaves.foreach(_.start)
 
-  def getPipe() :ConcurrentPipe[(Int,Int)] = pipe_
+  def getPipe() :ConcurrentPipe[(Int,Int)] = pipe
 
   override def run(): Unit = {
     while (true) {
@@ -58,14 +63,14 @@ class Master(
     if (curTasksAssigned < config.globalConfig.numTasks) {
        if (statistics.tasksShouldBeAssigned > curTasksAssigned) 0 else 1
     } else {
-      pipe_.push((-1, -1))
+      pipe.push((-1, -1))
       -1
     }
   }
 
   private def assignTask : Unit = {
     val numTasksToAssign = Math.min(taskBatch, config.globalConfig.numTasks - curTasksAssigned)
-    while (!pipe_.push((curOffset, numTasksToAssign)))
+    while (!pipe.push((curOffset, numTasksToAssign)))
       Thread.sleep(10)
 
     curOffset = (curOffset + numTasksToAssign) % resource.len
@@ -93,23 +98,72 @@ class Master(
     }
     slaves.toArray
   }
+
 }
 
 class Statistics(
                val config :ServiceConfig,
                val master :Master) {
-  def reportSuccs(timeMs :Long) = {
-    succs.addAndGet(1)
-    reqAll.addAndGet(1)
-    timeMsTotal.addAndGet(timeMs)
-    timeMsAll.addAndGet(timeMs)
-  }
-  def reportFails(timeMs :Long) = {
-    fails.addAndGet(1)
-    failsAll.addAndGet(1)
-    reqAll.addAndGet(1)
-    timeMsTotal.addAndGet(timeMs)
-    timeMsAll.addAndGet(timeMs)
+
+  private val lock = new ReentrantLock()
+
+  private var succs = 0
+  private var fails = 0
+  private var failsAll = 0
+  private var reqAll = 0
+  private var maxMsAll = 0L
+  private var timeMsTotal = 0L
+  private var timeMsAll = 0L
+  private val latenciesAll = TreeMultiset.create(new Comparator[Long] {
+    override def compare(o1: Long, o2: Long): Int = {
+      val ret = o1.asInstanceOf[Long] - o2.asInstanceOf[Long]
+      if (ret>0) {
+        -1
+      } else if (ret<0) {
+        1
+      } else {
+        0
+      }
+    }
+  })
+
+  private var lastReportTimeMs = 0L
+  private val timeStartMs = Time.getCurrentMs
+
+  def reportStatistics(timeMsRecords :Array[Long]): Unit = {
+    lock.lock()
+
+    timeMsRecords.foreach(timeMs => {
+      if (timeMs >= 0) {
+        succs += 1
+        reqAll += 1
+        if (timeMs > maxMsAll) {
+          maxMsAll = timeMs
+        }
+        timeMsTotal += timeMs
+        timeMsAll += timeMs
+        latenciesAll.add(timeMs)
+      } else {
+        fails += 1
+        failsAll += 1
+        reqAll += 1
+        if (-timeMs > maxMsAll) {
+          maxMsAll = -timeMs
+        }
+        timeMsTotal += -timeMs
+        timeMsAll += -timeMs
+      }
+    })
+
+    val iter = latenciesAll.iterator
+    while (latenciesAll.size >= Statistics.kMaxNumLatenciesAll && iter.hasNext) {
+      val tmp = iter.next()
+      if (Random.nextLong() % 1000 == 0) {
+        latenciesAll.remove(tmp)
+      }
+    }
+
+    lock.unlock()
   }
 
   def tasksShouldBeAssigned = {
@@ -119,34 +173,47 @@ class Statistics(
   def report(reportIntervalMs :Long) = {
     val timeMsElapse = Time.getCurrentMs - lastReportTimeMs
     if (timeMsElapse > reportIntervalMs) {
-      val reqs = succs.get() + fails.get()
-      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] avgAll[%d] qpsAll[%d] failsAll[%d] all[%d]".format(
+      lock.lock()
+
+      var latMax = -1L
+      val iter = latenciesAll.iterator
+      val position = (latenciesAll.size.toDouble * (1.0 - config.globalConfig.latMaxThreshold)).toInt
+      for (i <- 0 until (if (position > 1) position else 1)) {
+        if (iter.hasNext) {
+          latMax = iter.next()
+        }
+      }
+
+      val reqs = succs + fails
+      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] avgAll[%d] maxMsAll[%d] maxMsThresholdAll[%d] qpsAll[%d] failsAll[%d] all[%d]".format(
         config.globalConfig.numTasks,
-        succs.get(),
-        fails.get(),
-        if (reqs!=0) timeMsTotal.get / reqs else 0,
+        succs,
+        fails,
+        if (reqs!=0) timeMsTotal / reqs else 0,
         (reqs * 1.0 / timeMsElapse * 1000).toInt,
-        (timeMsAll.get() * 1.0 / reqAll.get()).toInt,
-        (reqAll.get() * 1.0 / (Time.getCurrentMs - timeStartMs) * 1000).toInt,
-        failsAll.get(),
-        reqAll.get()
+        (timeMsAll * 1.0 / reqAll).toInt,
+        maxMsAll.toInt,
+        latMax,
+        (reqAll * 1.0 / (Time.getCurrentMs - timeStartMs) * 1000).toInt,
+        failsAll,
+        reqAll
       ))
 
-      succs.set(0)
-      fails.set(0)
-      timeMsTotal.set(0)
+      succs = 0
+      fails = 0
+      timeMsTotal = 0
       lastReportTimeMs = Time.getCurrentMs
+
+      lock.unlock()
     }
   }
 
-  private val succs = new AtomicLong(0)
-  private val fails = new AtomicLong(0)
-  private val failsAll = new AtomicLong(0)
-  private val reqAll = new AtomicLong(0)
-  private val timeMsTotal = new AtomicLong(0)
-  private val timeMsAll = new AtomicLong(0)
-  private var lastReportTimeMs = 0L
-  private val timeStartMs = Time.getCurrentMs
+}
+
+object Statistics {
+
+  protected val kMaxNumLatenciesAll = 1000*1000
+
 }
 
 // vim: set ts=4 sw=4 et:

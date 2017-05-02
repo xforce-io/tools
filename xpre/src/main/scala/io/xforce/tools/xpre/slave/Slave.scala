@@ -3,16 +3,20 @@ package io.xforce.tools.xpre.slave
 import java.io.File
 
 import groovy.lang.{GroovyClassLoader, GroovyObject}
-import io.xforce.tools.xpre.{Resource, Master, ServiceConfig, Timer}
+import io.xforce.tools.xpre.{Master, Resource, ServiceConfig, Timer}
+
+import scala.collection.mutable.ArrayBuffer
 
 abstract class Slave(
     config :ServiceConfig,
     master :Master,
     resource :Resource) extends Thread {
 
+  protected val taskBatch = config.globalConfig.taskBatch
+  protected val statisticsReportBatch = if (config.globalConfig.qps/100 > 1) config.globalConfig.qps/100 else 1
   protected val preprocessorObj = getPreprocessorObject
   protected val checkerObj = getCheckerObject
-  private val taskBatch = config.globalConfig.taskBatch
+  protected val statisticsReports = new ArrayBuffer[Long]()
 
   override def run(): Unit = {
     while (true) {
@@ -56,19 +60,22 @@ abstract class Slave(
       timer.stop
     } catch {
       case e :Exception => {
-        master.getStatistics.reportFails(timer.timeMs)
+        reportStatistics(timer.timeMs, false)
         return
       }
     }
 
-    if (checkerObj != null) {
-      if (checkResult(result)) {
-        master.getStatistics.reportSuccs(timer.timeMs)
-      } else {
-        master.getStatistics.reportFails(timer.timeMs)
-      }
-    } else {
-      master.getStatistics.reportSuccs(timer.timeMs)
+    reportStatistics(
+        timer.timeMs,
+        if (checkerObj != null) checkResult(result) else true
+    )
+  }
+
+  protected def reportStatistics(timeMs :Long, succ :Boolean): Unit = {
+    statisticsReports.append(if (succ) timeMs else -timeMs)
+    if (statisticsReports.length >= statisticsReportBatch) {
+      master.getStatistics.reportStatistics(statisticsReports.toArray)
+      statisticsReports.clear()
     }
   }
 

@@ -23,6 +23,7 @@ class GlobalConfig(val config :Config) {
   val concurrency = config.getInt("concurrency")
   val numTasks = config.getInt("numTasks")
   val qps = config.getInt("qps")
+  val latMaxThreshold = config.getDouble("latMaxThreshold")
   val taskBatch = config.getInt("taskBatch")
   val preprocessorFilepath = config.getString("preprocessorFilepath")
   val checkerFilepath = config.getString("checkerFilepath")
