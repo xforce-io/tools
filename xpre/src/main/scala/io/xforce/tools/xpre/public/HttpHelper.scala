@@ -16,7 +16,11 @@ object HttpHelper {
     var result = ""
     var conn :HttpURLConnection = null
     try {
-      val urlNameString = url + "?" + param
+      var urlNameString = url
+      if (param != null) {
+         urlNameString += "?" + param
+      }
+
       val realUrl = new URL(urlNameString)
       conn = realUrl.openConnection().asInstanceOf[HttpURLConnection]
       conn.setRequestMethod("GET")
