@@ -4,7 +4,7 @@ import java.util.Comparator
 import java.util.concurrent.locks.ReentrantLock
 
 import com.google.common.collect.TreeMultiset
-import io.xforce.tools.xpre.public.ConcurrentPipe
+import io.xforce.tools.xpre.public.{ConcurrentPipe, SysInfo}
 import io.xforce.tools.xpre.slave.{Slave, SlaveSimpleHttpGet, SlaveSimpleHttpPost}
 
 import scala.collection.mutable.ArrayBuffer
@@ -185,7 +185,7 @@ class Statistics(
       }
 
       val reqs = succs + fails
-      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] avgAll[%d] maxMsAll[%d] maxMsThresholdAll[%d] qpsAll[%d] failsAll[%d] all[%d]".format(
+      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] avgAll[%d] maxMsAll[%d] maxMsThresholdAll[%d] qpsAll[%d] failsAll[%d] all[%d] memUsed[%f] cpuUsed[%f]".format(
         config.globalConfig.numTasks,
         succs,
         fails,
@@ -196,7 +196,9 @@ class Statistics(
         latMax,
         (reqAll * 1.0 / (Time.getCurrentMs - timeStartMs) * 1000).toInt,
         failsAll,
-        reqAll
+        reqAll,
+        SysInfo.getMemPercent(),
+        SysInfo.getCpuPercent()
       ))
 
       succs = 0

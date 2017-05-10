@@ -8,7 +8,4 @@ object Xpre {
     master.start()
     master.join()
   }
-
-
-
 }

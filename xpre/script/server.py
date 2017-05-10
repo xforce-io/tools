@@ -22,11 +22,11 @@ def Shutup() :
     pass
 
 def Start() :
-  cmd = "java -Xmx32768m -Xloggc:logs/gc.log -jar %s" % jar_filename
+  cmd = "java -Xmx32768m -Djava.library.path=lib/ -Xloggc:logs/gc.log -jar %s" % jar_filename
   os.system(cmd)
 
 def Init() :
-  cmd = "java -Xmx32768m -Xloggc:logs/gc.log -jar %s init" % jar_filename
+  cmd = "java -Xmx32768m -Djava.library.path=lib/ -Xloggc:logs/gc.log -jar %s init" % jar_filename
   os.system(cmd)
 
 if __name__ == "__main__" :
