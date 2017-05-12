@@ -185,13 +185,13 @@ class Statistics(
       }
 
       val reqs = succs + fails
-      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%d] qps[%d] avgAll[%d] maxMsAll[%d] maxMsThresholdAll[%d] qpsAll[%d] failsAll[%d] all[%d] memUsed[%f] cpuUsed[%f]".format(
+      println("numSpawned[%d] succ[%d] fail[%d] avgMs[%.2f] qps[%d] avgAll[%.2f] maxMsAll[%d] maxMsThresholdAll[%d] qpsAll[%d] failsAll[%d] all[%d] memUsed[%f] cpuUsed[%f]".format(
         config.globalConfig.numTasks,
         succs,
         fails,
-        if (reqs!=0) timeMsTotal / reqs else 0,
+        if (reqs!=0) 1.0 * timeMsTotal / reqs else 0D,
         (reqs * 1.0 / timeMsElapse * 1000).toInt,
-        (timeMsAll * 1.0 / reqAll).toInt,
+        timeMsAll * 1.0 / reqAll,
         maxMsAll.toInt,
         latMax,
         (reqAll * 1.0 / (Time.getCurrentMs - timeStartMs) * 1000).toInt,
