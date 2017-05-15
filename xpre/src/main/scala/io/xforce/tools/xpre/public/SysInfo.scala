@@ -9,7 +9,7 @@ object SysInfo {
 
   private val sigar = new Sigar
 
-  def getMemPercent() = sigar.getMem.getUsedPercent
+  def getMemPercent() = sigar.getMem.getUsedPercent / 100
 
   def getCpuPercent() = {
     var cpuPercent = 0D
