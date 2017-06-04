@@ -28,6 +28,7 @@ class Master(
   def getPipe() :ConcurrentPipe[(Int,Int)] = pipe
 
   override def run(): Unit = {
+    statistics.setTimeStart
     while (true) {
       val ret = process
       if (ret>0) {
@@ -46,6 +47,7 @@ class Master(
     if (ret==0) {
       assignTask
     } else if (ret<0) {
+      statistics.setTimeEnd
       var allDead = true
       do {
         allDead = true
@@ -133,7 +135,16 @@ class Statistics(
   })
 
   private var lastReportTimeMs = 0L
-  private val timeStartMs = Time.getCurrentMs
+  private var timeStartMs = Time.getCurrentMs
+  private var timeEndMs = Time.getCurrentMs
+
+  def setTimeStart: Unit = {
+    timeStartMs = Time.getCurrentMs
+  }
+
+  def setTimeEnd : Unit = {
+    timeEndMs = Time.getCurrentMs
+  }
 
   def reportStatistics(timeMsRecords :Array[Long]): Unit = {
     lock.lock()
@@ -210,7 +221,7 @@ class Statistics(
         timeMsAll * 1.0 / reqAll,
         maxMsAll.toInt,
         latMax,
-        (reqAll * 1.0 / (Time.getCurrentMs - timeStartMs) * 1000).toInt,
+        (reqAll * 1.0 / (timeEndMs - timeStartMs) * 1000).toInt,
         failsAll,
         if (numSysInfo != 0) memUsedAll/numSysInfo else -1D,
         if (numSysInfo != 0) cpuUsedAll/numSysInfo else -1D,
@@ -223,6 +234,8 @@ class Statistics(
       lastReportTimeMs = Time.getCurrentMs
 
       lock.unlock()
+    } else {
+      setTimeEnd
     }
   }
 
