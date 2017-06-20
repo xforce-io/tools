@@ -189,6 +189,8 @@ class Statistics(
   def report(reportIntervalMs :Long) = {
     val timeMsElapse = Time.getCurrentMs - lastReportTimeMs
     if (timeMsElapse > reportIntervalMs) {
+      setTimeEnd
+
       lock.lock()
 
       val curMem = SysInfo.getMemPercent()
@@ -234,8 +236,6 @@ class Statistics(
       lastReportTimeMs = Time.getCurrentMs
 
       lock.unlock()
-    } else {
-      setTimeEnd
     }
   }
 
